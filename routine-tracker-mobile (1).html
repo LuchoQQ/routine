@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Routine">
+    <meta name="theme-color" content="#0a0e14">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' fill='%230a0e14'/><text x='90' y='130' font-size='100' text-anchor='middle' fill='%2300ff88' font-family='monospace' font-weight='bold'>R</text></svg>">
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUm91dGluZSBUcmFja2VyIiwic2hvcnRfbmFtZSI6IlJvdXRpbmUiLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMGEwZTE0IiwidGhlbWVfY29sb3IiOiIjMGEwZTE0Iiwic3RhcnRfdXJsIjoiLyIsImlkIjoicm91dGluZS10cmFja2VyIiwiaWNvbnMiOlt7InNyYyI6ImRhdGE6aW1hZ2Uvc3ZnK3htbCw8c3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDE4MCAxODAnPjxyZWN0IHdpZHRoPScxODAnIGhlaWdodD0nMTgwJyBmaWxsPSclMjMwYTBlMTQnLz48dGV4dCB4PSc5MCcgeT0nMTMwJyBmb250LXNpemU9JzEwMCcgdGV4dC1hbmNob3I9J21pZGRsZScgZmlsbD0nJTIzMDBmZjg4JyBmb250LWZhbWlseT0nbW9ub3NwYWNlJyBmb250LXdlaWdodD0nYm9sZCc+UjwvdGV4dD48L3N2Zz4iLCJzaXplcyI6IjE4MHgxODAiLCJ0eXBlIjoiaW1hZ2Uvc3ZnK3htbCIsInB1cnBvc2UiOiJhbnkgbWFza2FibGUifV19">
+    <title>Routine Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e14;
+            --bg-secondary: #151b24;
+            --bg-card: #1a2332;
+            --accent-primary: #00ff88;
+            --accent-secondary: #00ccff;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-dim: #484f58;
+            --border: #30363d;
+            --warning: #ff9500;
+            --success: #00ff88;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .container {
+            max-width: 100%;
+            padding: 1rem;
+            padding-bottom: 2rem;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 0.5rem 0;
+        }
+        
+        .logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .time-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            color: var(--accent-primary);
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+        }
+        
+        .current-card {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 204, 255, 0.1));
+            border: 2px solid var(--accent-primary);
+            border-radius: 24px;
+            padding: 2rem 1.5rem;
+            margin-bottom: 1rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 255, 136, 0.15);
+        }
+        
+        .current-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            animation: shimmer 2s linear infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .current-activity {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            line-height: 1.1;
+            color: var(--accent-primary);
+            animation: pulse 3s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.85; }
+        }
+        
+        .time-range {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+        
+        .progress-ring {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .ring {
+            width: 60px;
+            height: 60px;
+            position: relative;
+        }
+        
+        .ring svg {
+            transform: rotate(-90deg);
+        }
+        
+        .ring-bg {
+            fill: none;
+            stroke: var(--bg-secondary);
+            stroke-width: 6;
+        }
+        
+        .ring-progress {
+            fill: none;
+            stroke: var(--accent-primary);
+            stroke-width: 6;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.3s ease;
+        }
+        
+        .ring-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--accent-primary);
+        }
+        
+        .remaining-text {
+            flex: 1;
+        }
+        
+        .remaining-label {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-bottom: 0.25rem;
+        }
+        
+        .remaining-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .next-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--accent-secondary);
+        }
+        
+        .next-activity-name {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+        
+        .next-time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            color: var(--accent-secondary);
+        }
+        
+        .goals-section {
+            margin-bottom: 1rem;
+        }
+        
+        .section-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+            font-weight: 600;
+            padding: 0 0.5rem;
+        }
+        
+        .goal-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .goal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        
+        .goal-name {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .goal-icon {
+            font-size: 1.3rem;
+        }
+        
+        .goal-progress {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        
+        .goal-progress.complete {
+            color: var(--success);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            border-radius: 4px;
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .action-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.25rem;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            text-align: center;
+        }
+        
+        .action-btn:active {
+            transform: scale(0.98);
+            background: var(--bg-secondary);
+        }
+        
+        .action-btn .emoji {
+            font-size: 2rem;
+        }
+        
+        .action-btn.primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: var(--bg-primary);
+            border: none;
+        }
+        
+        .notification-badge {
+            position: fixed;
+            top: env(safe-area-inset-top, 20px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+            padding: 0.75rem 1.5rem;
+            border-radius: 100px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 0.9rem;
+            z-index: 1000;
+            box-shadow: 0 10px 40px rgba(0, 255, 136, 0.4);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .notification-badge.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(20px);
+        }
+        
+        .install-prompt {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: var(--bg-primary);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            display: none;
+        }
+        
+        .install-prompt.show {
+            display: block;
+            animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .install-prompt h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+        
+        .install-prompt p {
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+        }
+        
+        .install-btn {
+            background: var(--bg-primary);
+            color: var(--accent-primary);
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 100px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        
+        .day-indicator {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding: 0 0.5rem;
+        }
+        
+        .day-dot {
+            flex: 1;
+            height: 6px;
+            background: var(--bg-card);
+            border-radius: 3px;
+            transition: all 0.3s;
+        }
+        
+        .day-dot.active {
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            height: 8px;
+        }
+        
+        .schedule-peek {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .schedule-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .schedule-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .schedule-time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            min-width: 60px;
+            font-weight: 600;
+        }
+        
+        .schedule-activity {
+            flex: 1;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .schedule-item.current {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(0, 204, 255, 0.15));
+            border-left: 3px solid var(--accent-primary);
+        }
+        
+        .schedule-item.current .schedule-activity {
+            color: var(--accent-primary);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="notification-badge" id="notificationBadge"></div>
+    
+    <div class="container">
+        <div class="install-prompt" id="installPrompt">
+            <h3>📱 Agregar a pantalla de inicio</h3>
+            <p>Toca el botón de compartir <strong>⎙</strong> y selecciona "Agregar a pantalla de inicio" para acceso rápido</p>
+        </div>
+        
+        <div class="header">
+            <div class="logo">ROUTINE</div>
+            <div class="time-badge" id="currentTime">00:00</div>
+        </div>
+        
+        <div class="day-indicator" id="dayIndicator"></div>
+        
+        <div class="current-card">
+            <div class="label">Ahora mismo</div>
+            <div class="current-activity" id="currentActivity">Cargando...</div>
+            <div class="time-range" id="timeRange">--:-- - --:--</div>
+            
+            <div class="progress-ring">
+                <div class="ring">
+                    <svg width="60" height="60">
+                        <circle class="ring-bg" cx="30" cy="30" r="26"></circle>
+                        <circle class="ring-progress" id="progressCircle" cx="30" cy="30" r="26" 
+                                stroke-dasharray="163.4" stroke-dashoffset="163.4"></circle>
+                    </svg>
+                    <div class="ring-text" id="progressPercent">0%</div>
+                </div>
+                <div class="remaining-text">
+                    <div class="remaining-label">Tiempo restante</div>
+                    <div class="remaining-value" id="remainingTime">--:--</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="next-card">
+            <div class="label">Siguiente</div>
+            <div class="next-activity-name" id="nextActivity">...</div>
+            <div class="next-time" id="nextTime">en --:--</div>
+        </div>
+        
+        <div class="goals-section">
+            <div class="section-title">Objetivos Semanales</div>
+            
+            <div class="goal-card">
+                <div class="goal-header">
+                    <div class="goal-name">
+                        <span class="goal-icon">🥇</span>
+                        <span>LeetCode</span>
+                    </div>
+                    <div class="goal-progress" id="leetcodeProgress">0/4</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="leetcodeBar" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div class="goal-card">
+                <div class="goal-header">
+                    <div class="goal-name">
+                        <span class="goal-icon">🥈</span>
+                        <span>Entrenar</span>
+                    </div>
+                    <div class="goal-progress" id="workoutProgress">0/4</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="workoutBar" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div class="goal-card">
+                <div class="goal-header">
+                    <div class="goal-name">
+                        <span class="goal-icon">🥉</span>
+                        <span>Comidas</span>
+                    </div>
+                    <div class="goal-progress" id="mealsProgress">0/15</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="mealsBar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="quick-actions">
+            <button class="action-btn primary" onclick="markActivityDone()">
+                <span class="emoji">✓</span>
+                <span>Completado</span>
+            </button>
+            <button class="action-btn" onclick="requestNotifications()">
+                <span class="emoji">🔔</span>
+                <span>Notificaciones</span>
+            </button>
+        </div>
+        
+        <div class="schedule-peek">
+            <div class="section-title">Próximas actividades</div>
+            <div id="schedulePreview"></div>
+        </div>
+    </div>
+    
+    <script>
+        const schedule = {
+            Monday: {
+                7: 'Desayunar', 8: 'Entrenar', 9: 'Trabajo', 10: 'Trabajo', 11: 'Trabajo',
+                12: 'Almuerzo', 13: 'Trabajo', 14: 'Trabajo', 15: 'Trabajo', 16: 'Trabajo',
+                17: 'Ingles', 18: 'Ingles', 19: 'Leetcode', 20: 'Flex', 21: 'Flex', 22: 'Cena'
+            },
+            Tuesday: {
+                7: 'Desayunar', 8: 'Entrenar', 9: 'Trabajo', 10: 'Trabajo', 11: 'Trabajo',
+                12: 'Almuerzo', 13: 'Trabajo', 14: 'Trabajo', 15: 'Trabajo', 16: 'Trabajo',
+                17: 'Flex', 18: 'Ingles', 19: 'Leetcode', 20: 'Flex', 21: 'Flex', 22: 'Cena'
+            },
+            Wednesday: {
+                7: 'Desayunar', 8: 'Entrenar', 9: 'Trabajo', 10: 'Trabajo', 11: 'Trabajo',
+                12: 'Almuerzo', 13: 'Trabajo', 14: 'Trabajo', 15: 'Trabajo', 16: 'Trabajo',
+                17: 'Ingles', 18: 'Mars', 19: 'Leetcode', 20: 'Flex', 21: 'Flex', 22: 'Cena'
+            },
+            Thursday: {
+                7: 'Desayunar', 8: 'Entrenar', 9: 'Trabajo', 10: 'Trabajo', 11: 'Trabajo',
+                12: 'Almuerzo', 13: 'Trabajo', 14: 'Trabajo', 15: 'Trabajo', 16: 'Trabajo',
+                17: 'Flex', 18: 'Ingles', 19: 'Leetcode', 20: 'Flex', 21: 'Flex', 22: 'Cena'
+            },
+            Friday: {
+                7: 'Desayunar', 8: 'Entrenar', 9: 'Trabajo', 10: 'Trabajo', 11: 'Trabajo',
+                12: 'Almuerzo', 13: 'Trabajo', 14: 'Trabajo', 15: 'Trabajo', 16: 'Trabajo',
+                17: 'Flex', 18: 'Flex', 19: 'Leetcode', 20: 'Flex', 21: 'Flex', 22: 'Cena'
+            }
+        };
+        
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        const dayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie'];
+        
+        let lastNotifiedActivity = '';
+        let weeklyProgress = JSON.parse(localStorage.getItem('weeklyProgress')) || {
+            leetcode: [],
+            workout: [],
+            meals: []
+        };
+        
+        function updateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            document.getElementById('currentTime').textContent = `${hours}:${minutes}`;
+            updateCurrentActivity();
+            updateDayIndicator();
+        }
+        
+        function updateDayIndicator() {
+            const dayIndicator = document.getElementById('dayIndicator');
+            const now = new Date();
+            const dayIndex = now.getDay();
+            const adjustedDayIndex = dayIndex === 0 ? -1 : dayIndex === 6 ? -1 : dayIndex - 1;
+            
+            dayIndicator.innerHTML = '';
+            for (let i = 0; i < 5; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'day-dot';
+                if (i === adjustedDayIndex) {
+                    dot.classList.add('active');
+                }
+                dayIndicator.appendChild(dot);
+            }
+        }
+        
+        function updateCurrentActivity() {
+            const now = new Date();
+            const dayIndex = now.getDay();
+            const adjustedDayIndex = dayIndex === 0 ? -1 : dayIndex === 6 ? -1 : dayIndex - 1;
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+            
+            if (adjustedDayIndex >= 0 && adjustedDayIndex < 5) {
+                const currentDay = days[adjustedDayIndex];
+                const currentActivity = schedule[currentDay][currentHour] || 'Tiempo libre';
+                
+                document.getElementById('currentActivity').textContent = currentActivity;
+                document.getElementById('timeRange').textContent = `${currentHour}:00 - ${currentHour + 1}:00`;
+                
+                // Progress calculation
+                const minutesElapsed = currentMinute;
+                const progressPercent = Math.round((minutesElapsed / 60) * 100);
+                const circumference = 2 * Math.PI * 26;
+                const offset = circumference - (progressPercent / 100) * circumference;
+                
+                document.getElementById('progressCircle').style.strokeDashoffset = offset;
+                document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+                
+                const minutesRemaining = 60 - currentMinute;
+                document.getElementById('remainingTime').textContent = 
+                    `${minutesRemaining} min`;
+                
+                // Find next activity
+                let nextActivity = '';
+                let nextHour = currentHour + 1;
+                let nextDay = currentDay;
+                
+                if (schedule[nextDay][nextHour]) {
+                    nextActivity = schedule[nextDay][nextHour];
+                } else {
+                    const nextDayIndex = (adjustedDayIndex + 1) % 5;
+                    nextDay = days[nextDayIndex];
+                    nextHour = 7;
+                    nextActivity = schedule[nextDay][nextHour];
+                }
+                
+                document.getElementById('nextActivity').textContent = nextActivity;
+                
+                if (nextHour === currentHour + 1) {
+                    document.getElementById('nextTime').textContent = `en ${minutesRemaining} min`;
+                } else {
+                    document.getElementById('nextTime').textContent = `mañana a las ${nextHour}:00`;
+                }
+                
+                // Update schedule preview
+                updateSchedulePreview(currentDay, currentHour);
+                
+                // Check for activity change notification
+                if (currentMinute === 0 && currentActivity !== lastNotifiedActivity) {
+                    showNotification(`Ahora: ${currentActivity}`);
+                    lastNotifiedActivity = currentActivity;
+                    
+                    // Browser notification
+                    if ('Notification' in window && Notification.permission === 'granted') {
+                        new Notification('Routine Tracker', {
+                            body: `Ahora: ${currentActivity}`,
+                            icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230a0e14"/><text x="50" y="70" font-size="60" text-anchor="middle" fill="%2300ff88" font-family="monospace" font-weight="bold">R</text></svg>',
+                            badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230a0e14"/><text x="50" y="70" font-size="60" text-anchor="middle" fill="%2300ff88" font-family="monospace" font-weight="bold">R</text></svg>'
+                        });
+                    }
+                }
+                
+                // 5-minute warning
+                if (currentMinute === 55 && currentActivity !== 'Flex') {
+                    const upcoming = schedule[currentDay][currentHour + 1] || schedule[days[(adjustedDayIndex + 1) % 5]][7];
+                    showNotification(`En 5 min: ${upcoming}`);
+                }
+            } else {
+                document.getElementById('currentActivity').textContent = 'Fin de semana';
+                document.getElementById('timeRange').textContent = 'Disfruta';
+                document.getElementById('remainingTime').textContent = '∞';
+                document.getElementById('nextActivity').textContent = 'Desayunar';
+                document.getElementById('nextTime').textContent = 'Lunes 7:00';
+                document.getElementById('schedulePreview').innerHTML = '<div class="schedule-item"><div class="schedule-activity">¡Disfruta tu fin de semana!</div></div>';
+            }
+        }
+        
+        function updateSchedulePreview(currentDay, currentHour) {
+            const preview = document.getElementById('schedulePreview');
+            preview.innerHTML = '';
+            
+            const hours = [currentHour, currentHour + 1, currentHour + 2, currentHour + 3, currentHour + 4];
+            
+            hours.forEach((hour, index) => {
+                if (hour <= 22) {
+                    const activity = schedule[currentDay][hour];
+                    if (activity) {
+                        const item = document.createElement('div');
+                        item.className = 'schedule-item';
+                        if (index === 0) item.classList.add('current');
+                        
+                        item.innerHTML = `
+                            <div class="schedule-time">${hour}:00</div>
+                            <div class="schedule-activity">${activity}</div>
+                        `;
+                        
+                        preview.appendChild(item);
+                    }
+                }
+            });
+        }
+        
+        function showNotification(message) {
+            const badge = document.getElementById('notificationBadge');
+            badge.textContent = message;
+            badge.classList.add('show');
+            
+            setTimeout(() => {
+                badge.classList.remove('show');
+            }, 3000);
+        }
+        
+        function requestNotifications() {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        showNotification('¡Notificaciones activadas!');
+                    } else {
+                        showNotification('Notificaciones bloqueadas');
+                    }
+                });
+            } else {
+                showNotification('Notificaciones no disponibles');
+            }
+        }
+        
+        function markActivityDone() {
+            const now = new Date();
+            const today = now.toDateString();
+            const currentHour = now.getHours();
+            const dayIndex = now.getDay() === 0 ? -1 : now.getDay() === 6 ? -1 : now.getDay() - 1;
+            
+            if (dayIndex >= 0) {
+                const currentDay = days[dayIndex];
+                const activity = schedule[currentDay][currentHour];
+                
+                if (activity === 'Leetcode' && !weeklyProgress.leetcode.includes(today)) {
+                    weeklyProgress.leetcode.push(today);
+                    showNotification('✓ LeetCode completado');
+                } else if (activity === 'Entrenar' && !weeklyProgress.workout.includes(today)) {
+                    weeklyProgress.workout.push(today);
+                    showNotification('✓ Entrenamiento completado');
+                } else if (['Desayunar', 'Almuerzo', 'Cena'].includes(activity)) {
+                    const mealKey = `${today}-${activity}`;
+                    if (!weeklyProgress.meals.includes(mealKey)) {
+                        weeklyProgress.meals.push(mealKey);
+                        showNotification(`✓ ${activity} completado`);
+                    }
+                } else {
+                    showNotification(`✓ ${activity} marcado`);
+                }
+                
+                localStorage.setItem('weeklyProgress', JSON.stringify(weeklyProgress));
+                updateWeeklyProgress();
+            }
+        }
+        
+        function updateWeeklyProgress() {
+            const leetcodeCount = weeklyProgress.leetcode.length;
+            const workoutCount = weeklyProgress.workout.length;
+            const mealsCount = weeklyProgress.meals.length;
+            
+            document.getElementById('leetcodeProgress').textContent = `${leetcodeCount}/4`;
+            document.getElementById('leetcodeProgress').classList.toggle('complete', leetcodeCount >= 4);
+            document.getElementById('leetcodeBar').style.width = `${(leetcodeCount / 4) * 100}%`;
+            
+            document.getElementById('workoutProgress').textContent = `${workoutCount}/4`;
+            document.getElementById('workoutProgress').classList.toggle('complete', workoutCount >= 4);
+            document.getElementById('workoutBar').style.width = `${(workoutCount / 4) * 100}%`;
+            
+            document.getElementById('mealsProgress').textContent = `${mealsCount}/15`;
+            document.getElementById('mealsProgress').classList.toggle('complete', mealsCount >= 15);
+            document.getElementById('mealsBar').style.width = `${(mealsCount / 15) * 100}%`;
+        }
+        
+        // Check if running as PWA
+        function isPWA() {
+            return window.matchMedia('(display-mode: standalone)').matches ||
+                   window.navigator.standalone === true;
+        }
+        
+        // Show install prompt for Safari
+        if (!isPWA() && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
+            setTimeout(() => {
+                document.getElementById('installPrompt').classList.add('show');
+            }, 2000);
+        }
+        
+        // Reset weekly progress on Monday
+        function checkWeeklyReset() {
+            const lastReset = localStorage.getItem('lastReset');
+            const now = new Date();
+            const currentWeek = getWeekNumber(now);
+            
+            if (lastReset !== currentWeek) {
+                weeklyProgress = { leetcode: [], workout: [], meals: [] };
+                localStorage.setItem('weeklyProgress', JSON.stringify(weeklyProgress));
+                localStorage.setItem('lastReset', currentWeek);
+                updateWeeklyProgress();
+            }
+        }
+        
+        function getWeekNumber(d) {
+            d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+            return Math.ceil((((d - yearStart) / 86400000) + 1) / 7).toString();
+        }
+        
+        // Initialize
+        updateWeeklyProgress();
+        updateTime();
+        checkWeeklyReset();
+        
+        setInterval(updateTime, 1000);
+        setInterval(checkWeeklyReset, 60000);
+    </script>
+</body>
+</html>
