@@ -684,25 +684,55 @@
                 // Update schedule preview
                 updateSchedulePreview(currentDay, currentHour);
                 
-                // Check for activity change notification
-                if (currentMinute === 0 && currentActivity !== lastNotifiedActivity) {
-                    showNotification(`Ahora: ${currentActivity}`);
+                // Check for activity change notification - MULTIPLE CHECKS
+                const notificationKey = `${currentDay}-${currentHour}`;
+                const lastNotification = localStorage.getItem('lastNotification');
+                
+                // Trigger at minute 0 OR if we haven't notified for this hour yet
+                if ((currentMinute === 0 || lastNotification !== notificationKey) && currentActivity !== lastNotifiedActivity) {
+                    // Visual notification
+                    showNotification(`🎯 Ahora: ${currentActivity}`);
                     lastNotifiedActivity = currentActivity;
+                    localStorage.setItem('lastNotification', notificationKey);
+                    
+                    // Play sound and vibrate
+                    playAlertSound();
+                    vibrateDevice();
                     
                     // Browser notification
                     if ('Notification' in window && Notification.permission === 'granted') {
-                        new Notification('Routine Tracker', {
+                        new Notification('⏰ Routine Tracker', {
                             body: `Ahora: ${currentActivity}`,
                             icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230a0e14"/><text x="50" y="70" font-size="60" text-anchor="middle" fill="%2300ff88" font-family="monospace" font-weight="bold">R</text></svg>',
-                            badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230a0e14"/><text x="50" y="70" font-size="60" text-anchor="middle" fill="%2300ff88" font-family="monospace" font-weight="bold">R</text></svg>'
+                            badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230a0e14"/><text x="50" y="70" font-size="60" text-anchor="middle" fill="%2300ff88" font-family="monospace" font-weight="bold">R</text></svg>',
+                            tag: 'routine-change',
+                            requireInteraction: true,
+                            vibrate: [200, 100, 200]
                         });
                     }
                 }
                 
-                // 5-minute warning
-                if (currentMinute === 55 && currentActivity !== 'Flex') {
-                    const upcoming = schedule[currentDay][currentHour + 1] || schedule[days[(adjustedDayIndex + 1) % 5]][7];
-                    showNotification(`En 5 min: ${upcoming}`);
+                // 5-minute warning - MORE AGGRESSIVE
+                if ((currentMinute === 55 || currentMinute === 56 || currentMinute === 57) && currentActivity !== 'Flex') {
+                    const warningKey = `warning-${currentDay}-${currentHour}`;
+                    const lastWarning = localStorage.getItem('lastWarning');
+                    
+                    if (lastWarning !== warningKey) {
+                        const upcoming = schedule[currentDay][currentHour + 1] || schedule[days[(adjustedDayIndex + 1) % 5]][7];
+                        showNotification(`⚠️ En 5 min: ${upcoming}`);
+                        playWarningSound();
+                        vibrateDevice();
+                        localStorage.setItem('lastWarning', warningKey);
+                        
+                        if ('Notification' in window && Notification.permission === 'granted') {
+                            new Notification('⏰ Próxima actividad', {
+                                body: `En 5 minutos: ${upcoming}`,
+                                tag: 'routine-warning',
+                                requireInteraction: false,
+                                vibrate: [100, 50, 100]
+                            });
+                        }
+                    }
                 }
             } else {
                 document.getElementById('currentActivity').textContent = 'Fin de semana';
@@ -746,7 +776,59 @@
             
             setTimeout(() => {
                 badge.classList.remove('show');
-            }, 3000);
+            }, 4000);
+        }
+        
+        function playAlertSound() {
+            // Create a more noticeable beep sound
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+        
+        function playWarningSound() {
+            // Shorter, higher pitch for warning
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 1000;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+        
+        function vibrateDevice() {
+            if ('vibrate' in navigator) {
+                navigator.vibrate([200, 100, 200]);
+            }
         }
         
         function requestNotifications() {
@@ -853,6 +935,44 @@
         
         setInterval(updateTime, 1000);
         setInterval(checkWeeklyReset, 60000);
+        
+        // Keep-alive mechanism for iOS - prevent app suspension
+        let wakeLock = null;
+        
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log('Wake Lock activated');
+                }
+            } catch (err) {
+                console.log('Wake Lock not supported:', err);
+            }
+        }
+        
+        // Request wake lock when app becomes visible
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                requestWakeLock();
+            }
+        });
+        
+        // Initial wake lock request
+        requestWakeLock();
+        
+        // Play a silent audio on loop to keep app active (iOS hack)
+        function keepAppAlive() {
+            const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
+            audio.loop = true;
+            audio.volume = 0;
+            
+            // Start on user interaction
+            document.addEventListener('touchstart', () => {
+                audio.play().catch(e => console.log('Audio play failed:', e));
+            }, { once: true });
+        }
+        
+        keepAppAlive();
     </script>
 </body>
 </html>
